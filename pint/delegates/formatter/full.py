@@ -22,6 +22,7 @@ from ._compound_unit_helpers import BabelKwds
 from ._to_register import REGISTERED_FORMATTERS
 from .html import HTMLFormatter
 from .latex import LatexFormatter, SIunitxFormatter
+from .typst import TypstFormatter
 from .plain import (
     BaseFormatter,
     CompactFormatter,
@@ -78,6 +79,7 @@ class FullFormatter(BaseFormatter):
         self._formatters["Lx"] = SIunitxFormatter(registry)
         self._formatters["L"] = LatexFormatter(registry)
         self._formatters["C"] = CompactFormatter(registry)
+        self._formatters["T"] = TypstFormatter(registry)
 
     def set_locale(self, loc: str | None) -> None:
         """Change the locale used by default by `format_babel`.
@@ -271,3 +273,4 @@ REGISTERED_FORMATTERS["P"] = PrettyFormatter()
 REGISTERED_FORMATTERS["Lx"] = SIunitxFormatter()
 REGISTERED_FORMATTERS["L"] = LatexFormatter()
 REGISTERED_FORMATTERS["C"] = CompactFormatter()
+REGISTERED_FORMATTERS["T"] = TypstFormatter()
