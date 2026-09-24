@@ -147,3 +147,127 @@ class TypstFormatter(BaseFormatter):
             self.format_uncertainty(measurement.magnitude, unc_spec, **babel_kwds),
             self.format_unit(measurement.units, uspec, sort_func, **babel_kwds),
         )
+
+class ZeroFormatter(BaseFormatter):
+    """Typst localizable text formatter with zero format.
+    
+    See: https://typst.app/universe/package/zero
+    """
+    default_format = ""
+
+    def format_magnitude(
+        self, magnitude: Magnitude, mspec: str = "", **babel_kwds: Unpack[BabelKwds]
+    ) -> str:
+        with override_locale(mspec, babel_kwds.get("locale", None)) as format_number:
+            mstr = format_number(magnitude)
+
+        return mstr.replace("e+00", "").replace("e+0", "e").replace("e-0", "e-")
+
+    def format_unit(
+        self,
+        unit: PlainUnit | Iterable[tuple[str, Any]],
+        uspec: str = "",
+        sort_func: SortFunc | None = None,
+        **babel_kwds: Unpack[BabelKwds],
+    ) -> str:
+        if "~" not in uspec:
+            uspec = "~" + uspec
+        
+        numerator, denominator = prepare_compount_unit(
+            unit,
+            uspec,
+            sort_func=sort_func,
+            **babel_kwds,
+            registry=self._registry,
+        )
+
+        if babel_kwds.get("locale", None):
+            length = babel_kwds.get("length") or ("short" if "~" in uspec else "long")
+            division_fmt = localize_per(length, babel_kwds.get("locale"), "{} / {}")
+        else:
+            division_fmt = "{} / {}"
+
+        as_ratio = babel_kwds.get("as_ratio", True)
+        assert isinstance(as_ratio, bool)
+
+        fmt = formatter(
+            numerator,
+            denominator,
+            as_ratio=as_ratio,
+            single_denominator=False,
+            product_fmt="{} {}",
+            division_fmt=division_fmt,
+            power_fmt="{}^{}",
+            parentheses_fmt=r"({})",
+        )
+
+        return f"#quan[{fmt}]"
+
+    def format_quantity[MagnitudeT: Magnitude](
+        self,
+        quantity: PlainQuantity[MagnitudeT],
+        qspec: str = "",
+        sort_func: SortFunc | None = None,
+        **babel_kwds: Unpack[BabelKwds],
+    ) -> str:
+        registry = self._registry
+
+        mspec, uspec = split_format(
+            qspec, registry.formatter.default_format, registry.separate_format_defaults
+        )
+
+        joint_fstring = "{} {}"
+
+        mstr = self.format_magnitude(quantity.magnitude, mspec, **babel_kwds)
+        ustr = self.format_unit(quantity.unit_items(), uspec, sort_func, **babel_kwds)[
+            len("#quan[") :
+        ]
+
+        return "#quan" + join_mu(joint_fstring, "[%s" % mstr, ustr)
+
+    def format_uncertainty(
+        self,
+        uncertainty,
+        unc_spec: str = "",
+        sort_func: SortFunc | None = None,
+        **babel_kwds: Unpack[BabelKwds],
+    ) -> str:
+        return (
+            format(uncertainty, unc_spec)
+                .replace("+/-", "+-")
+                .replace("e+00", "")
+                .replace("e+0", "e")
+                .replace("e-0", "e-")
+                .replace("(", "")
+                .replace(")", "")
+        )
+
+    def format_measurement(
+        self,
+        measurement: Measurement,
+        meas_spec: str = "",
+        sort_func: SortFunc | None = None,
+        **babel_kwds: Unpack[BabelKwds],
+    ) -> str:
+        registry = self._registry
+
+        mspec, uspec = split_format(
+            meas_spec,
+            registry.formatter.default_format,
+            registry.separate_format_defaults,
+        )
+
+        unc_spec = remove_custom_flags(meas_spec)
+
+        joint_fstring = "{} {}"
+
+        return "#quan" + join_unc(
+            joint_fstring,
+            "",
+            "",
+            "[%s"
+            % self.format_uncertainty(measurement.magnitude, unc_spec, **babel_kwds),
+            self.format_unit(measurement.units, uspec, sort_func, **babel_kwds)[
+                len("#quan[") :
+            ],
+        )
