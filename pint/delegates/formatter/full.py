@@ -22,7 +22,6 @@ from ._compound_unit_helpers import BabelKwds
 from ._to_register import REGISTERED_FORMATTERS
 from .html import HTMLFormatter
 from .latex import LatexFormatter, SIunitxFormatter
-from .typst import TypstFormatter, ZeroFormatter
 from .plain import (
     BaseFormatter,
     CompactFormatter,
@@ -31,6 +30,7 @@ from .plain import (
     RawFormatter,
 )
 from .sorting import SortFunc, sort_by_unit_name
+from .typst import TypstFormatter, ZeroFormatter
 
 if TYPE_CHECKING:
     from ...compat import Locale

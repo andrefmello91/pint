@@ -12,19 +12,17 @@ Implements:
 
 from __future__ import annotations
 
-import functools
 import re
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
 from ..._typing import Magnitude
-from ...compat import Number, Unpack, ndarray
+from ...compat import Unpack
 from ._compound_unit_helpers import (
     BabelKwds,
     prepare_compount_unit,
 )
 from ._format_helpers import (
-    FORMATTER,
     formatter,
     join_mu,
     join_unc,
@@ -40,12 +38,9 @@ from .sorting import SortFunc
 if TYPE_CHECKING:
     from ...facets.measurement import Measurement
     from ...facets.plain import PlainQuantity, PlainUnit
-    from ...registry import UnitRegistry
-    from ...util import ItMatrix
 
 
 _EXP_PATTERN = re.compile(r"(-?[0-9]\.?[0-9]*)e(-?)\+?0*([0-9]+)")
-
 
 
 class TypstFormatter(BaseFormatter):
@@ -74,8 +69,8 @@ class TypstFormatter(BaseFormatter):
             registry=self._registry,
         )
 
-        numerator = ((f"\"{u}\"", p) for u, p in numerator)
-        denominator = ((f"\"{u}\"", p) for u, p in denominator)
+        numerator = ((f'"{u}"', p) for u, p in numerator)
+        denominator = ((f'"{u}"', p) for u, p in denominator)
 
         as_ratio = babel_kwds.get("as_ratio", True)
         assert isinstance(as_ratio, bool)
@@ -148,11 +143,13 @@ class TypstFormatter(BaseFormatter):
             self.format_unit(measurement.units, uspec, sort_func, **babel_kwds),
         )
 
+
 class ZeroFormatter(BaseFormatter):
     """Typst localizable text formatter with zero format.
-    
+
     See: https://typst.app/universe/package/zero
     """
+
     default_format = ""
 
     def format_magnitude(
@@ -172,7 +169,7 @@ class ZeroFormatter(BaseFormatter):
     ) -> str:
         if "~" not in uspec:
             uspec = "~" + uspec
-        
+
         numerator, denominator = prepare_compount_unit(
             unit,
             uspec,
@@ -234,12 +231,12 @@ class ZeroFormatter(BaseFormatter):
     ) -> str:
         return (
             format(uncertainty, unc_spec)
-                .replace("+/-", "+-")
-                .replace("e+00", "")
-                .replace("e+0", "e")
-                .replace("e-0", "e-")
-                .replace("(", "")
-                .replace(")", "")
+            .replace("+/-", "+-")
+            .replace("e+00", "")
+            .replace("e+0", "e")
+            .replace("e-0", "e-")
+            .replace("(", "")
+            .replace(")", "")
         )
 
     def format_measurement(
