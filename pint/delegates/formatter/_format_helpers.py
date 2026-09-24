@@ -21,7 +21,7 @@ from typing import (
     Any,
 )
 
-from ...compat import ndarray
+from ...compat import ndarray, _sciformatter
 from ._spec_helpers import FORMATTER
 
 try:
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
 _PRETTY_EXPONENTS = "⁰¹²³⁴⁵⁶⁷⁸⁹"
 _JOIN_REG_EXP = re.compile(r"{\d*}")
+_SCIFORM_SPECS = "rR"
 
 
 def format_number(value: Any, spec: str = "") -> str:
@@ -79,7 +80,10 @@ def override_locale(
 
     if locale is None:
         # If locale is None, just return the builtin format function.
-        yield ("{:" + spec + "}").format
+        if any(c in spec for c in _SCIFORM_SPECS):
+            yield _sciformatter(spec)
+        else: 
+            yield ("{:" + spec + "}").format
     else:
         # If locale is not None, change it and return the backwards compatible
         # format_number.
