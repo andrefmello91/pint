@@ -55,12 +55,7 @@ class TypstFormatter(BaseFormatter):
         self, magnitude: Magnitude, mspec: str = "", **babel_kwds: Unpack[BabelKwds]
     ) -> str:
         with override_locale(mspec, babel_kwds.get("locale", None)) as format_number:
-            if isinstance(magnitude, ndarray):
-                mstr = ndarray_to_typst(magnitude, mspec)
-            else:
-                mstr = format_number(magnitude)
-
-            mstr = _EXP_PATTERN.sub(r"\1 times 10^(\2\3)", mstr)
+            mstr = _EXP_PATTERN.sub(r"\1 times 10^(\2\3)", format_number(magnitude))
 
         return mstr
 
@@ -81,15 +76,6 @@ class TypstFormatter(BaseFormatter):
 
         numerator = ((f"\"{u}\"", p) for u, p in numerator)
         denominator = ((f"\"{u}\"", p) for u, p in denominator)
-
-        # Localized latex
-        # if babel_kwds.get("locale", None):
-        #     length = babel_kwds.get("length") or ("short" if "~" in uspec else "long")
-        #     division_fmt = localize_per(length, babel_kwds.get("locale"), "{}/{}")
-        # else:
-        #     division_fmt = "{}/{}"
-
-        # division_fmt = r"\frac" + division_fmt.format("[{}]", "[{}]")
 
         as_ratio = babel_kwds.get("as_ratio", True)
         assert isinstance(as_ratio, bool)
