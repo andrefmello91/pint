@@ -253,6 +253,13 @@ try:
 except ImportError:
     HAS_SCIPY = False
 
+try:
+    import sciform
+
+    HAS_SCIFORM = True
+except ImportError:
+    HAS_SCIFORM = False
+
 HAS_DASK = find_spec("dask") is not None
 
 
@@ -383,6 +390,16 @@ else:
     compute, persist, visualize = None, None, None
     dask_array = None
 
+if HAS_SCIFORM:
+    import sciform
+    from sciform.formatting.fsml import format_options_from_fmt_spec
+
+    def _sciformatter(spec: str = "") -> Callable[[Any], str]:
+        formatter = sciform.Formatter(**format_options_from_fmt_spec(spec).as_dict())
+        return formatter.__call__
+else:
+    def _sciformatter(spec: str = ""):
+        return missing_dependency("sciform")
 
 # TODO: merge with upcast_type_map
 
