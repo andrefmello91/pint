@@ -159,7 +159,13 @@ class ZeroFormatter(BaseFormatter):
         with override_locale(mspec, babel_kwds.get("locale", None)) as format_number:
             mstr = format_number(magnitude)
 
-        return mstr.replace("e+00", "").replace("e+0", "e").replace("e-0", "e-")
+        return (
+            mstr
+                .replace("E", "e")
+                .replace("e+00", "")
+                .replace("e+0", "e+")
+                .replace("e-0", "e-")
+        )
 
     def format_unit(
         self,
