@@ -220,12 +220,12 @@ class ZeroFormatter(BaseFormatter):
             qspec, registry.formatter.default_format, registry.separate_format_defaults
         )
 
-        joint_fstring = "{} {}"
-
         mstr = self.format_magnitude(quantity.magnitude, mspec, **babel_kwds)
         ustr = self.format_unit(quantity.unit_items(), uspec, sort_func, **babel_kwds)[
             len("#quan[") :
         ]
+
+        joint_fstring = "{}{}" if ustr == "]" else "{} {}"
 
         return "#quan" + join_mu(joint_fstring, "[%s" % mstr, ustr)
 
