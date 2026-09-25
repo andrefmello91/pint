@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
 _PRETTY_EXPONENTS = "⁰¹²³⁴⁵⁶⁷⁸⁹"
 _JOIN_REG_EXP = re.compile(r"{\d*}")
+_ENGINEERING_REG_EXP = re.compile(r"[rR]")
 
 
 def format_number(value: Any, spec: str = "") -> str:
@@ -79,7 +80,10 @@ def override_locale(
 
     if locale is None:
         # If locale is None, just return the builtin format function.
-        yield ("{:" + spec + "}").format
+        if re.search(_ENGINEERING_REG_EXP, spec):
+            yield engineering_fmt(spec)
+        else:
+            yield ("{:" + spec + "}").format
     else:
         # If locale is not None, change it and return the backwards compatible
         # format_number.
@@ -90,7 +94,6 @@ def override_locale(
             setlocale(LC_NUMERIC, str(locale))
         yield partial(format_number, spec=spec)
         setlocale(LC_NUMERIC, prev_locale_string)
-
 
 def pretty_fmt_exponent(num: Number) -> str:
     """Format an number into a pretty printed exponent."""
@@ -253,3 +256,38 @@ def formatter(
         neg_ret = join_u(division_fmt, neg_terms)
 
     return join_u(division_fmt, [pos_ret, neg_ret])
+
+def engineering_fmt(spec: str) -> Callable[[Number], str]:
+    """Given a format spec, return a function that formats a number in engineering notation."""
+    precision = 2
+    uppercase = False
+
+    if "R" in spec:
+        uppercase = True
+        spec = spec.replace("R", "")
+    elif "r" in spec:
+        spec = spec.replace("r", "")
+
+    spec_clean = spec.lstrip(".")
+    if spec_clean.isdigit():
+        precision = int(spec_clean)
+
+    def formatter(value: float) -> str:
+        e_char = "E" if uppercase else "e"
+
+        if value == 0:
+            return f"{0:.{precision}f}{e_char}+00"
+
+        raw_sci = f"{value:.{precision + 3}e}"
+
+        mantissa_str, exp_str = raw_sci.split("e")
+        exp_val = int(exp_str)
+
+        shift = exp_val % 3
+        eng_exp = exp_val - shift
+
+        eng_mantissa = float(mantissa_str) * (10**shift)
+
+        return f"{eng_mantissa:.{precision}f}{e_char}{eng_exp:+03d}"
+
+    return formatter
