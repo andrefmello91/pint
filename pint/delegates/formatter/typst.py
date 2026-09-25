@@ -20,6 +20,7 @@ from ..._typing import Magnitude
 from ...compat import Unpack
 from ._compound_unit_helpers import (
     BabelKwds,
+    localize_per,
     prepare_compount_unit,
 )
 from ._format_helpers import (
