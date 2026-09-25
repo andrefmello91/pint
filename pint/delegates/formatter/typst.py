@@ -20,6 +20,7 @@ from ..._typing import Magnitude
 from ...compat import Unpack
 from ._compound_unit_helpers import (
     BabelKwds,
+    localize_per,
     prepare_compount_unit,
 )
 from ._format_helpers import (
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from ...facets.plain import PlainQuantity, PlainUnit
 
 
-_EXP_PATTERN = re.compile(r"(-?[0-9]\.?[0-9]*)e(-?)\+?0*([0-9]+)")
+_EXP_PATTERN = re.compile(r"(-?[0-9]\.?[0-9]*)[eE](-?)\+?0*([0-9]+)")
 
 
 class TypstFormatter(BaseFormatter):
@@ -158,7 +159,13 @@ class ZeroFormatter(BaseFormatter):
         with override_locale(mspec, babel_kwds.get("locale", None)) as format_number:
             mstr = format_number(magnitude)
 
-        return mstr.replace("e+00", "").replace("e+0", "e").replace("e-0", "e-")
+        return (
+            mstr
+                .replace("E", "e")
+                .replace("e+00", "")
+                .replace("e+0", "e+")
+                .replace("e-0", "e-")
+        )
 
     def format_unit(
         self,
@@ -213,12 +220,12 @@ class ZeroFormatter(BaseFormatter):
             qspec, registry.formatter.default_format, registry.separate_format_defaults
         )
 
-        joint_fstring = "{} {}"
-
         mstr = self.format_magnitude(quantity.magnitude, mspec, **babel_kwds)
         ustr = self.format_unit(quantity.unit_items(), uspec, sort_func, **babel_kwds)[
             len("#quan[") :
         ]
+
+        joint_fstring = "{}{}" if ustr == "]" else "{} {}"
 
         return "#quan" + join_mu(joint_fstring, "[%s" % mstr, ustr)
 
