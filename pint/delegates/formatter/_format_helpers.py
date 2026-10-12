@@ -15,7 +15,7 @@ from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
 from fractions import Fraction
 from functools import partial
-from locale import LC_NUMERIC, getlocale, setlocale
+from locale import LC_NUMERIC, setlocale
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -87,13 +87,19 @@ def override_locale(
     else:
         # If locale is not None, change it and return the backwards compatible
         # format_number.
-        prev_locale_string = getlocale(LC_NUMERIC)
+        # setlocale() queried with no new setting returns the current locale
+        # name in the form setlocale accepts back; getlocale() returns a
+        # (language, encoding) pair that fails to restore on some platforms.
+        prev_locale_string = setlocale(LC_NUMERIC)
         if isinstance(locale, str):
             setlocale(LC_NUMERIC, locale)
         else:
             setlocale(LC_NUMERIC, str(locale))
-        yield partial(format_number, spec=spec)
-        setlocale(LC_NUMERIC, prev_locale_string)
+        try:
+            yield partial(format_number, spec=spec)
+        finally:
+            setlocale(LC_NUMERIC, prev_locale_string)
+
 
 def pretty_fmt_exponent(num: Number) -> str:
     """Format an number into a pretty printed exponent."""
@@ -256,6 +262,7 @@ def formatter(
         neg_ret = join_u(division_fmt, neg_terms)
 
     return join_u(division_fmt, [pos_ret, neg_ret])
+
 
 def engineering_fmt(spec: str) -> Callable[[Number], str]:
     """Given a format spec, return a function that formats a number in engineering notation."""
